@@ -15,3 +15,6 @@ Route::get('/apiCheck', function() {
 
 Route::get('/allProducts', [ProductController::class, 'index']);
 Route::post('/products', [ProductController::class, 'store']);
+Route::get('/products/{product}', [ProductController::class, 'show']);
+Route::put('/productsUpdate/{product}', [ProductController::class, 'update']);
+Route::delete('/productsDelete/{product}', [ProductController::class, 'destroy']);
