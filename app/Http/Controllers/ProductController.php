@@ -13,19 +13,19 @@ class ProductController extends Controller
      */
     public function index()
     {
-       $products = Product::get(); 
+        $products = Product::get();
 
-       if($products->isEmpty()){
+        if ($products->isEmpty()) {
+            return response()->json([
+                'message' => 'No products found',
+                'data' => []
+            ]);
+        }
+
         return response()->json([
-            'message' => 'No products found',
-            'data' => []
+            'message' => 'Products retrieved successfully',
+            'data' => $products
         ]);
-       }
-
-       return response()->json([
-        'message' => 'Products retrieved successfully',
-        'data' => $products
-       ]);
     }
 
     /**
@@ -33,23 +33,39 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $product= [
-            'name' => $request->name,
-            'description' => $request->description,
-            'price' => $request->price,
-        ];
 
-        if($request->hasFile('product_image')){
-            $path = $request->file('product_image')->store('public/product_images');
-            $product['product_image'] = $path;
+        try {
+
+            $request->validate([
+                'name' => 'required',
+                'description' => 'required',
+                'price' => 'required',
+                'product_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            ]);
+
+            $product = [
+                'name' => $request->name,
+                'description' => $request->description,
+                'price' => $request->price,
+            ];
+
+            if ($request->hasFile('product_image')) {
+                $path = $request->file('product_image')->store('public/product_images');
+                $product['product_image'] = $path;
+            }
+
+            $products = Product::create($product);
+            $products->product_image = $products->product_image_url;
+            return response()->json([
+                'message' => 'Product created successfully',
+                'data' => $products
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $err) {
+            return response()->json([
+                'message' => 'Validation Error',
+                'errors' => $err->errors()
+            ], 422);
         }
-
-        $products = Product::create($product);
-        $products->product_image = $products->product_image_url;
-        return response()->json([
-            'message' => 'Product created successfully',
-            'data' => $products
-        ]);
     }
 
     /**
@@ -69,37 +85,37 @@ class ProductController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, Product $product)
-{
+    {
 
-    $productUpdate = [
-        'name' => $request->name,
-        'description' => $request->description,
-        'price' => $request->price,
-    ];
+        $productUpdate = [
+            'name' => $request->name,
+            'description' => $request->description,
+            'price' => $request->price,
+        ];
 
-    if ($request->hasFile('product_image')) {
-        $path = $request->file('product_image')->store('public/product_images');
+        if ($request->hasFile('product_image')) {
+            $path = $request->file('product_image')->store('public/product_images');
 
-        $productUpdate['product_image'] = $path;
+            $productUpdate['product_image'] = $path;
+        }
+
+
+        $product->update($productUpdate);
+
+        $product->product_image = $product->product_image_url;
+
+        return response()->json([
+            'message' => 'Product updated successfully',
+            'data' => $product
+        ]);
     }
-
-
-    $product->update($productUpdate);
-
-    $product->product_image = $product->product_image_url;
-
-    return response()->json([
-        'message' => 'Product updated successfully',
-        'data' => $product
-    ]);
-}
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(Product $product)
     {
-        if($product->product_image){
+        if ($product->product_image) {
             Storage::delete($product->product_image);
         }
         $product->delete();
