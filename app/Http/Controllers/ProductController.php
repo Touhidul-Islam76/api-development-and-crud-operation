@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ProductStoreResource;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = Product::get();
+        $products = ProductStoreResource::collection(Product::get());
 
         if ($products->isEmpty()) {
             return response()->json([
@@ -58,7 +59,7 @@ class ProductController extends Controller
             $products->product_image = $products->product_image_url;
             return response()->json([
                 'message' => 'Product created successfully',
-                'data' => $products
+                'data' => new ProductStoreResource($products)
             ]);
         } catch (\Illuminate\Validation\ValidationException $err) {
             return response()->json([
@@ -77,7 +78,7 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'Product retrieved successfully',
-            'data' => $product
+            'data' => new ProductStoreResource($product)
         ]);
     }
 
